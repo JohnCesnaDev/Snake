@@ -2,10 +2,10 @@
 #include <Nazara/Platform/Window.hpp>
 #include <Nazara/Widgets.hpp>
 
-
-
 #include <iostream>
 #include <vector>
+#include <random>
+
 
 #include "GameState.hpp"
 #include "MenuState.hpp"
@@ -21,6 +21,7 @@
 		
 		CreateGrid();
 		AddKeyboard(window);
+		SpawnEat(RandomPosition());
 
 		m_snake.push_back(AddSnake({ 12 , 7 }));
 		m_snake.push_back(AddSnake({ 11 , 7 }));
@@ -46,8 +47,7 @@
     };
     bool GameState::Update(Nz::StateMachine& fsm, Nz::Time elapsedTime){
 		
-		if (m_speedSnake.RestartIfOver(Nz::Time::Seconds(0.5f))) {
-			//std::cout << "Vector2f(" << m_direction.x << ", " << m_direction.y << ")" << std::endl;
+		if (m_speedSnake.RestartIfOver(Nz::Time::Seconds(m_speed))){
 			MoveSnake();
 		}
 								
@@ -152,9 +152,15 @@
 
 	void GameState::MoveSnake() {
 
-		//std::cout << "Vector2f(" << m_direction.x << ", " << m_direction.y << ")" << std::endl;
-
 		
+		auto& nodeSnake = m_snake[0].get<Nz::NodeComponent>();
+		
+		if (EatSnake({ nodeSnake.GetPosition().x + m_direction.x,nodeSnake.GetPosition().y + m_direction.y }))
+		{
+			m_snake.push_back(AddSnake({ 0 , 0 }));
+			MoveEat(RandomPosition());
+		}
+			
 
 		for (auto it = m_snake.rbegin(); it != m_snake.rend() - 1; it++) {
 
@@ -165,7 +171,6 @@
 			nodeSnake.SetPosition(nodeSnakeNext.GetPosition());
 		}
 
-		auto& nodeSnake = m_snake[0].get<Nz::NodeComponent>();
 		CollisionSnake({ nodeSnake.GetPosition().x + m_direction.x,nodeSnake.GetPosition().y + m_direction.y });
 		nodeSnake.SetPosition(nodeSnake.GetPosition() + m_direction);
 		m_allowMove = true;
@@ -181,17 +186,78 @@
 			m_gameOver = true;
 
 		for (auto it = m_snake.begin(); it != m_snake.end(); it++) {
-
 			auto& nodeSnake = it->get<Nz::NodeComponent>();
-
 			if (position.x == nodeSnake.GetPosition().x && position.y == nodeSnake.GetPosition().y) {
 				m_gameOver = true;
 				break;
 			}
 		}
 
+	};
+
+	bool GameState::EatSnake(Nz::Vector2f position) {
+
+		auto& nodeEat = m_eat.get<Nz::NodeComponent>();
+		nodeEat.GetPosition();
+		
+		if (position.x == nodeEat.GetPosition().x && position.y == nodeEat.GetPosition().y)
+		{
+			m_speed = m_speed - m_ajusteTime;
+			return true;
+		}
+
+		return false;
+	};
+
+	void GameState::SpawnEat(Nz::Vector2f position) {	
+
+		std::shared_ptr<Nz::Sprite> spriteEat = std::make_shared<Nz::Sprite>(m_materialInstance);
+		spriteEat->SetColor(Nz::Color::Yellow());
+		spriteEat->SetSize({ m_squareSize - 4,m_squareSize - 4 });
+
+		m_eat = m_world.CreateEntity();
+		{
+			auto& nodeEat = m_eat.emplace<Nz::NodeComponent>();
+			nodeEat.SetPosition(position);
+			auto& graphicsGrid = m_eat.emplace<Nz::GraphicsComponent>();
+			graphicsGrid.AttachRenderable(spriteEat);
+		}
 
 	};
+
+	void GameState::MoveEat(Nz::Vector2f position) {
+
+			auto& nodeEat = m_eat.get<Nz::NodeComponent>();
+			nodeEat.SetPosition(position);
+
+	};
+
+	Nz::Vector2f GameState::RandomPosition() {
+
+		std::random_device rd;
+		std::mt19937 gen(rd());
+
+		std::uniform_int_distribution<> distX(0, 24);
+		std::uniform_int_distribution<> distY(0, 14);
+
+		Nz::Vector2f position = { distX(gen) * m_squareSize + 3 , distY(gen) * m_squareSize + 3 };
+
+		for (auto it = m_snake.begin(); it != m_snake.end(); it++) {
+			auto& nodeSnake = it->get<Nz::NodeComponent>();
+			if (position.x == nodeSnake.GetPosition().x && position.y == nodeSnake.GetPosition().y) {
+				std::cout << "random in snake" << std::endl;
+				position = { distX(gen) * m_squareSize + 3 , distY(gen) * m_squareSize + 3 };
+				it = m_snake.begin();
+			}
+		}
+
+		std::cout << "random find" << std::endl;
+		return position;
+	}
+
+	
+
+
 
 
 
