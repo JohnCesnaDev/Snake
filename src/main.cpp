@@ -3,15 +3,15 @@
 #include <Nazara/Platform.hpp>
 #include <Nazara/Widgets.hpp>
 
+#include "main.h"
 #include "States/GameState.hpp"
 #include "States/MenuState.hpp"
-
 
 
 int main()
 {
 	Nz::Application < Nz::Graphics, Nz::Widgets > app;
-	
+		
 
 	auto& windowComponent = app.AddComponent<Nz::WindowingAppComponent>();
 

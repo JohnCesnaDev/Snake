@@ -6,10 +6,13 @@ add_rules("mode.debug", "mode.release")
 set_runtimes(is_mode("debug") and "MDd" or "MD")
 set_languages("c++20")
 
+
 add_defines("NAZARA_ENTT")
 
 target("Snake")
-    add_files("src/main.cpp")
+    set_kind("binary")
+    add_ldflags("/subsystem:windows")
+    add_files("src/main.cpp","src/winMain.cpp")
     add_files("src/States/*.cpp")
     add_packages("nazaraengine")
 
@@ -21,4 +24,4 @@ target("Snake")
 
         local bin = path.join(nazaraengine:installdir(), "bin")
         os.vcp(path.join(bin, "*.dll"), target:installdir("bin"))
-    end)
+        end)
